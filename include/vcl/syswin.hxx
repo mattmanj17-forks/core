@@ -96,21 +96,21 @@ class VCL_DLLPUBLIC SystemWindow
     class ImplData;
 
 private:
-    VclPtr<MenuBar> mpMenuBar;
-    Size            maMinOutSize;
-    bool            mbDockBtn;
-    bool            mbHideBtn;
-    bool            mbSysChild;
-    bool            mbIsCalculatingInitialLayoutSize;
-    bool            mbInitialLayoutSizeCalculated;
-    bool            mbPaintComplete;
-    MenuBarMode     mnMenuBarMode;
-    sal_uInt16      mnIcon;
     std::unique_ptr<ImplData> mpImplData;
-    Idle            maLayoutIdle;
+    VclPtr<MenuBar> mpMenuBar;
     OUString        maNotebookBarUIFile;
+    Size            maMinOutSize;
+    MenuBarMode     mnMenuBarMode = MenuBarMode::Normal;
+    sal_uInt16      mnIcon = 0;
+    bool            mbDockBtn : 1 = false;
+    bool            mbHideBtn : 1 = false;
+    bool            mbSysChild : 1 = false;
+    bool            mbIsCalculatingInitialLayoutSize : 1 = false;
+    bool            mbInitialLayoutSizeCalculated : 1 = false;
+    bool            mbPaintComplete : 1 = false;
+    bool            mbIsDeferredInit : 1 = false;
+    Idle            maLayoutIdle;
 protected:
-    bool            mbIsDeferredInit;
     VclPtr<vcl::Window> mpDialogParent;
 public:
     using Window::ImplIsInTaskPaneList;
@@ -143,6 +143,8 @@ protected:
     virtual void settingOptimalLayoutSize(Window *pBox);
 
     SAL_DLLPRIVATE void DoInitialLayout();
+
+    virtual void ImplDeferredInit(vcl::Window* pParent, WinBits nBits);
 
 public:
     virtual         ~SystemWindow() override;
@@ -239,7 +241,7 @@ public:
 
     SAL_DLLPRIVATE bool hasPendingLayout() const { return maLayoutIdle.IsActive(); }
 
-    virtual        void    doDeferredInit(WinBits nBits);
+    void doDeferredInit(WinBits nBits);
 
     // Screenshot interface
     VclPtr<VirtualDevice> createScreenshot();

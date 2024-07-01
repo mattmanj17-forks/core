@@ -66,17 +66,8 @@ SystemWindow::ImplData::ImplData()
 
 SystemWindow::SystemWindow(WindowType nType, const char* pIdleDebugName)
     : Window(nType)
-    , mbDockBtn(false)
-    , mbHideBtn(false)
-    , mbSysChild(false)
-    , mbIsCalculatingInitialLayoutSize(false)
-    , mbInitialLayoutSizeCalculated(false)
-    , mbPaintComplete(false)
-    , mnMenuBarMode(MenuBarMode::Normal)
-    , mnIcon(0)
     , mpImplData(new ImplData)
     , maLayoutIdle( pIdleDebugName )
-    , mbIsDeferredInit(false)
 {
     mpWindowImpl->mbSysWin            = true;
     mpWindowImpl->mnActivateMode      = ActivateModeFlags::GrabFocus;
@@ -1110,7 +1101,15 @@ void SystemWindow::DoInitialLayout()
     }
 }
 
-void SystemWindow::doDeferredInit(WinBits /*nBits*/)
+void SystemWindow::doDeferredInit(WinBits nBits)
+{
+    VclPtr<vcl::Window> pParent = mpDialogParent;
+    mpDialogParent.reset();
+    ImplDeferredInit(pParent, nBits);
+    mbIsDeferredInit = false;
+}
+
+void SystemWindow::ImplDeferredInit(vcl::Window* /*pParent*/, WinBits /*nBits*/)
 {
     SAL_WARN("vcl.layout", "SystemWindow in layout without doDeferredInit impl");
 }

@@ -27,6 +27,7 @@
 #include <editeng/editdata.hxx>
 #include <filter/msfilter/ww8fields.hxx>
 #include <filter/msfilter/msoleexp.hxx>
+#include <unotools/securityoptions.hxx>
 
 #include <shellio.hxx>
 
@@ -1024,6 +1025,8 @@ protected:
 
 private:
     rtl::Reference<SotStorage> m_xEscherStg; /// memory leak #i120098#, to hold the reference to unnamed SotStorage obj
+    /// map authors to remove personal info
+    std::unique_ptr<SvtSecurityMapPersonalInfo> mpAuthorIDs;
 
 public:
     /// Access to the attribute output class.
@@ -1271,13 +1274,16 @@ struct WW8_Annotation
     OUString msSimpleText;
     OUString msOwner;
     OUString m_sInitials;
-    DateTime maDateTime;
+    DateTime maDateTime = DateTime(DateTime::EMPTY);
     WW8_CP m_nRangeStart, m_nRangeEnd;
     bool m_bIgnoreEmpty = true;
+    /// map authors to remove personal info
+    std::unique_ptr<SvtSecurityMapPersonalInfo> mpAuthorIDs;
     WW8_Annotation(const SwPostItField* pPostIt, WW8_CP nRangeStart, WW8_CP nRangeEnd);
     explicit WW8_Annotation(const SwRedlineData* pRedline);
     /// An annotation has a range if start != end or the m_bIgnoreEmpty flag is cleared.
     bool HasRange() const;
+    void initPersonalInfo(const OUString& sAuthor, const OUString& sInitials, DateTime aDateTime);
 };
 
 class WW8_WrPlcAnnotations : public WW8_WrPlcSubDoc  // double Plc for Postits
