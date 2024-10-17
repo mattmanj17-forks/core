@@ -170,7 +170,7 @@ namespace
             getCurrentContext().Flatness = nFlatness;
         }
 
-        virtual void setLineJoin(sal_Int8 nJoin) override
+        virtual void setLineJoin(basegfx::B2DLineJoin nJoin) override
         {
             getCurrentContext().LineJoin = nJoin;
         }
@@ -261,7 +261,7 @@ namespace
             CPPUNIT_ASSERT_EQUAL_MESSAGE( "Blend mode is normal",
                                     rendering::BlendMode::NORMAL, rContext.BlendMode );
             CPPUNIT_ASSERT_EQUAL_MESSAGE( "Join type is round",
-                                    rendering::PathJoinType::ROUND, rContext.LineJoin );
+                                    basegfx::B2DLineJoin::Round, rContext.LineJoin );
             CPPUNIT_ASSERT_EQUAL_MESSAGE( "Cap type is butt",
                                     rendering::PathCapType::BUTT, rContext.LineCap );
             CPPUNIT_ASSERT_DOUBLES_EQUAL_MESSAGE( "Line miter limit is 10",
@@ -338,6 +338,12 @@ namespace
                 aNewClip = basegfx::utils::clipPolyPolygonOnPolyPolygon( aCurClip, aNewClip, true, false );
 
             getCurrentContext().Clip = aNewClip;
+        }
+
+        virtual void intersectClipToStroke(const uno::Reference<rendering::XPolyPolygon2D>& /* rPath */) override
+        {
+            // Not copying the contents of this, unlike the other clip functions above
+            // it's too complex to copy in, and I don't think the clip is actually used in the test
         }
 
         virtual void drawGlyphs( const OUString&             rGlyphs,

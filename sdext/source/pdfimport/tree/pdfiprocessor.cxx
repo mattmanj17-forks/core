@@ -33,13 +33,19 @@
 #include <comphelper/sequence.hxx>
 #include <basegfx/polygon/b2dpolygonclipper.hxx>
 #include <basegfx/polygon/b2dpolygontools.hxx>
+#include <basegfx/polygon/b2dpolypolygoncutter.hxx>
 #include <basegfx/utils/canvastools.hxx>
+#include <basegfx/vector/b2enums.hxx>
 #include <basegfx/matrix/b2dhommatrix.hxx>
 #include <i18nutil/unicode.hxx>
 #include <o3tl/string_view.hxx>
 
 using namespace com::sun::star;
 
+#include <drawinglayer/primitive2d/PolyPolygonStrokePrimitive2D.hxx>
+#include <drawinglayer/processor2d/linegeometryextractor2d.hxx>
+
+#include <iostream>
 
 namespace pdfi
 {
@@ -109,7 +115,7 @@ void PDFIProcessor::setLineDash( const uno::Sequence<double>& dashes,
     comphelper::sequenceToContainer(rContext.DashArray,dashes);
 }
 
-void PDFIProcessor::setLineJoin(sal_Int8 nJoin)
+void PDFIProcessor::setLineJoin(basegfx::B2DLineJoin nJoin)
 {
     getCurrentContext().LineJoin = nJoin;
 }
@@ -526,6 +532,50 @@ void PDFIProcessor::intersectEoClip(const uno::Reference< rendering::XPolyPolygo
         aNewClip = basegfx::utils::clipPolyPolygonOnPolyPolygon( aCurClip, aNewClip, true, false );
 
     getCurrentContext().Clip = std::move(aNewClip);
+}
+
+void PDFIProcessor::intersectClipToStroke(const uno::Reference< rendering::XPolyPolygon2D >& rPath)
+{
+    // TODO(F3): interpret fill mode
+    basegfx::B2DPolyPolygon aNewClip = basegfx::unotools::b2DPolyPolygonFromXPolyPolygon2D(rPath);
+    const GraphicsContext& rGC(getCurrentContext());
+    aNewClip.transform(rGC.Transformation);
+    basegfx::B2DPolyPolygon aCurClip = rGC.Clip;
+    double nScale = GetAverageTransformationScale(rGC.Transformation);
+
+
+    // We need to get a path that corresponds to a 'stroked path' - i.e. with whatever line
+    // thickness etc is set.  PolyPolygonStrokePrimitive2D::create2DDecomposition does most
+    // of the work.
+    const basegfx::BColor aBlack(0.0, 0.0, 0.0);
+    drawinglayer::attribute::LineAttribute aLineAttribute(aBlack, rGC.LineWidth * nScale,
+                                                          rGC.LineJoin);
+    rtl::Reference<drawinglayer::primitive2d::PolyPolygonStrokePrimitive2D> aStrokePrimitive(
+        new drawinglayer::primitive2d::PolyPolygonStrokePrimitive2D(aNewClip, aLineAttribute));
+    drawinglayer::primitive2d::Primitive2DContainer aPrimitiveContainer;
+    const drawinglayer::geometry::ViewInformation2D aViewInformation2D;
+    aStrokePrimitive->get2DDecomposition(aPrimitiveContainer, aViewInformation2D);
+
+    // Based on extractLineContourFromPrimitive2DSequence and ImpConvertToContourObj
+    drawinglayer::processor2d::LineGeometryExtractor2D aExtractor(aViewInformation2D);
+    aExtractor.process(aPrimitiveContainer);
+
+    basegfx::B2DPolygonVector aHairlines = aExtractor.getExtractedHairlines();
+    auto aFills = aExtractor.getExtractedLineFills();
+
+    basegfx::B2DPolyPolygon aTmpClip = basegfx::utils::mergeToSinglePolyPolygon(std::move(aFills));
+
+    for (const basegfx::B2DPolygon & rExtractedHairline : aHairlines)
+    {
+        aTmpClip.append(rExtractedHairline);
+    }
+
+    aNewClip = aTmpClip;
+
+    if( aCurClip.count() )  // #i92985# adapted API from (..., false, false) to (..., true, false)
+        aNewClip = basegfx::utils::clipPolyPolygonOnPolyPolygon( aCurClip, aNewClip, true, false );
+
+    getCurrentContext().Clip = aNewClip;
 }
 
 void PDFIProcessor::hyperLink( const geometry::RealRectangle2D& rBounds,
