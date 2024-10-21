@@ -369,6 +369,7 @@ constexpr auto constTransitionTypeToString = mapEnumToString<sal_Int16>({
     { animations::TransitionType::BARNDOORWIPE, "BarnDoorWipe"}, // Split
     { animations::TransitionType::WATERFALLWIPE, "WaterfallWipe"}, // Diagonal
     { animations::TransitionType::MISCSHAPEWIPE, "MiscShapeWipe"},
+    { animations::TransitionType::ZOOM, "Zoom"}
 });
 
 constexpr auto constTransitionSubTypeToString = mapEnumToString<sal_Int16>({
@@ -401,6 +402,17 @@ constexpr auto constTransitionSubTypeToString = mapEnumToString<sal_Int16>({
     { animations::TransitionSubType::HORIZONTALRIGHT, "HorizontalRight"},
     { animations::TransitionSubType::COMBVERTICAL, "CombVertical"},
     { animations::TransitionSubType::COMBHORIZONTAL, "CombHorizontal"},
+    { animations::TransitionSubType::TOPLEFT, "TopLeft"},
+    { animations::TransitionSubType::TOPRIGHT, "TopRight"},
+    { animations::TransitionSubType::BOTTOMRIGHT, "BottomRight"},
+    { animations::TransitionSubType::BOTTOMLEFT, "BottomLeft"},
+    { animations::TransitionSubType::TOPCENTER, "TopCenter"},
+    { animations::TransitionSubType::RIGHTCENTER, "RightCenter"},
+    { animations::TransitionSubType::BOTTOMCENTER, "BottomCenter"},
+    { animations::TransitionSubType::FANOUTHORIZONTAL, "FanOutHorizontal"},
+    { animations::TransitionSubType::CORNERSIN, "CornersIn"},
+    { animations::TransitionSubType::HEART, "Heart"},
+    { animations::TransitionSubType::ROTATEIN, "RotateIn"}
 });
 
 constexpr auto constAnimationNodeTypeToString = mapEnumToString<sal_Int16>({
@@ -4849,6 +4861,17 @@ sal_Bool SAL_CALL SdMasterPagesAccess::hasElements()
 // XDrawPages
 uno::Reference< drawing::XDrawPage > SAL_CALL SdMasterPagesAccess::insertNewByIndex( sal_Int32 nInsertPos )
 {
+    return insertNewImpl(nInsertPos, std::nullopt);
+}
+
+// XDrawPages2
+uno::Reference< drawing::XDrawPage > SAL_CALL SdMasterPagesAccess::insertNamedNewByIndex( sal_Int32 nInsertPos, const OUString& sName )
+{
+    return insertNewImpl(nInsertPos, sName);
+}
+
+uno::Reference< drawing::XDrawPage > SdMasterPagesAccess::insertNewImpl( sal_Int32 nInsertPos, std::optional<OUString> oPageName )
+{
     ::SolarMutexGuard aGuard;
 
     if( nullptr == mpModel )
@@ -4866,29 +4889,34 @@ uno::Reference< drawing::XDrawPage > SAL_CALL SdMasterPagesAccess::insertNewByIn
             nInsertPos = nMPageCount;
 
         // now generate a unique name for the new masterpage
-        const OUString aStdPrefix( SdResId(STR_LAYOUT_DEFAULT_NAME) );
-        OUString aPrefix( aStdPrefix );
-
-        bool bUnique = true;
-
-        std::vector<OUString> aPageNames;
-        for (sal_Int32 nMaster = 1; nMaster < nMPageCount; ++nMaster)
+        OUString aPrefix;
+        if (oPageName)
+            aPrefix = *oPageName;
+        else
         {
-            const SdPage* pPage = static_cast<const SdPage*>(pDoc->GetMasterPage(static_cast<sal_uInt16>(nMaster)));
-            if (!pPage)
-                continue;
-            aPageNames.push_back(pPage->GetName());
-            if (aPageNames.back() == aPrefix)
-                bUnique = false;
-        }
+            const OUString aStdPrefix( SdResId(STR_LAYOUT_DEFAULT_NAME) );
+            aPrefix = aStdPrefix;
 
-        sal_Int32 i = 0;
-        while (!bUnique)
-        {
-            aPrefix = aStdPrefix + " " + OUString::number(++i);
-            bUnique = std::find(aPageNames.begin(), aPageNames.end(), aPrefix) == aPageNames.end();
-        }
+            bool bUnique = true;
 
+            std::vector<OUString> aPageNames;
+            for (sal_Int32 nMaster = 1; nMaster < nMPageCount; ++nMaster)
+            {
+                const SdPage* pPage = static_cast<const SdPage*>(pDoc->GetMasterPage(static_cast<sal_uInt16>(nMaster)));
+                if (!pPage)
+                    continue;
+                aPageNames.push_back(pPage->GetName());
+                if (aPageNames.back() == aPrefix)
+                    bUnique = false;
+            }
+
+            sal_Int32 i = 0;
+            while (!bUnique)
+            {
+                aPrefix = aStdPrefix + " " + OUString::number(++i);
+                bUnique = std::find(aPageNames.begin(), aPageNames.end(), aPrefix) == aPageNames.end();
+            }
+        }
         OUString aLayoutName = aPrefix + SD_LT_SEPARATOR + STR_LAYOUT_OUTLINE;
 
         // create styles
@@ -4905,6 +4933,9 @@ uno::Reference< drawing::XDrawPage > SAL_CALL SdMasterPagesAccess::insertNewByIn
                            pPage->GetUpperBorder(),
                            pPage->GetRightBorder(),
                            pPage->GetLowerBorder() );
+        if (oPageName)
+            // no need to update the page URLs on a brand new page
+            pMPage->SetName(*oPageName, /*bUpdatePageRelativeURLs*/false);
         pMPage->SetLayoutName( aLayoutName );
         pDoc->InsertMasterPage(pMPage.get(),  static_cast<sal_uInt16>(nInsertPos));
 

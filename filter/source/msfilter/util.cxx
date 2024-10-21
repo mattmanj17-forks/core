@@ -72,7 +72,7 @@ DateTime DTTM2DateTime( tools::Long lDTTM )
                                             Friday=5
                                             Saturday=6)
     */
-    DateTime aDateTime(Date( 0 ), ::tools::Time( 0 ));
+    DateTime aDateTime(Date( 0 ), ::tools::Time( tools::Time::EMPTY ));
     if( lDTTM )
     {
         sal_uInt16 lMin = static_cast<sal_uInt16>(lDTTM & 0x0000003F);
@@ -1064,7 +1064,6 @@ OString GetOOXMLPresetGeometry( std::u16string_view rShapeType )
         { u"ooxml-cloudCallout", "cloudCallout" },
         { u"ooxml-callout1", "callout1" },
         { u"ooxml-ribbon", "ribbon" },
-        { u"ooxml-rect", "rect" },
     };
     auto i(aCustomShapeTypeTranslationHashMap.find(rShapeType));
     return i == aCustomShapeTypeTranslationHashMap.end() ? "rect"_ostr : i->second;

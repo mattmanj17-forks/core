@@ -122,6 +122,7 @@ bool isBuilderEnabled(std::u16string_view rUIFile, bool bMobile)
         || rUIFile == u"modules/scalc/ui/groupdialog.ui"
         || rUIFile == u"modules/scalc/ui/headerfootercontent.ui"
         || rUIFile == u"modules/scalc/ui/headerfooterdialog.ui"
+        || rUIFile == u"modules/scalc/ui/imoptdialog.ui"
         || rUIFile == u"modules/scalc/ui/insertcells.ui"
         || rUIFile == u"modules/scalc/ui/managenamesdialog.ui"
         || rUIFile == u"modules/scalc/ui/movingaveragedialog.ui"
@@ -279,6 +280,7 @@ bool isBuilderEnabled(std::u16string_view rUIFile, bool bMobile)
         || rUIFile == u"filter/ui/warnpdfdialog.ui"
         // writerperfect
         || rUIFile == u"writerperfect/ui/exportepub.ui"
+        || rUIFile == u"writerperfect/ui/wpftencodingdialog.ui"
         // xmlsec
         || rUIFile == u"xmlsec/ui/certgeneral.ui"
         || rUIFile == u"xmlsec/ui/certpage.ui"

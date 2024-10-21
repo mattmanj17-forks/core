@@ -132,8 +132,8 @@ void Comment::InitControls(const SwPostItField* pPostItField)
         return;
     msText = pPostItField->GetText();
     msAuthor = pPostItField->GetPar1();
-    maDate = Date(pPostItField->GetDateTime().GetDate());
-    maTime = tools::Time(pPostItField->GetDateTime().GetTime());
+    maDate = Date(pPostItField->GetDateTime());
+    maTime = tools::Time(pPostItField->GetDateTime());
     mbResolved = pPostItField->GetResolved();
 
     OUString sDate = sw::sidebar::CommentsPanel::FormatDate(maDate);
@@ -351,10 +351,10 @@ bool CommentsPanel::comp_dateTime(SwFormatField* a, SwFormatField* b)
     SwPostItField* pA = static_cast<SwPostItField*>(a->GetField());
     SwPostItField* pB = static_cast<SwPostItField*>(b->GetField());
 
-    Date aDateA(pA->GetDateTime().GetDate());
-    tools::Time aTimeA(pA->GetDateTime().GetTime());
-    Date aDateB(pB->GetDateTime().GetDate());
-    tools::Time aTimeB(pB->GetDateTime().GetTime());
+    Date aDateA(pA->GetDateTime());
+    tools::Time aTimeA(pA->GetDateTime());
+    Date aDateB(pB->GetDateTime());
+    tools::Time aTimeB(pB->GetDateTime());
 
     OUString sDateTimeA = FormatTime(aTimeA) + " " + FormatDate(aDateA);
     OUString sDateTimeB = FormatTime(aTimeB) + " " + FormatDate(aDateB);
@@ -682,7 +682,7 @@ IMPL_LINK_NOARG(CommentsPanel, FilterByAuthor, weld::ComboBox&, void)
     {
         for (auto & [ nId, pComment ] : mpCommentsMap)
         {
-            if (!mbResetDate && mxFilterDate->get_date() != pComment->GetDate())
+            if (mbDateSelected && mxFilterDate->get_date() != pComment->GetDate())
                 continue;
             pComment->get_widget()->set_visible(true);
         }
@@ -693,7 +693,7 @@ IMPL_LINK_NOARG(CommentsPanel, FilterByAuthor, weld::ComboBox&, void)
         {
             if (sAuthor == pComment->GetAuthor())
             {
-                if (!mbResetDate && mxFilterDate->get_date() != pComment->GetDate())
+                if (mbDateSelected && mxFilterDate->get_date() != pComment->GetDate())
                     continue;
                 pComment->get_widget()->set_visible(true);
             }
@@ -707,6 +707,7 @@ IMPL_LINK_NOARG(CommentsPanel, FilterByAuthor, weld::ComboBox&, void)
 
 IMPL_LINK_NOARG(CommentsPanel, FilterByDate, SvtCalendarBox&, void)
 {
+    mbDateSelected = true;
     Date aDate(mxFilterDate->get_date());
     for (auto & [ nId, pComment ] : mpCommentsMap)
     {
@@ -724,9 +725,8 @@ IMPL_LINK_NOARG(CommentsPanel, FilterByDate, SvtCalendarBox&, void)
 
 IMPL_LINK_NOARG(CommentsPanel, ResetDate, weld::Button&, void)
 {
-    mbResetDate = true;
+    mbDateSelected = false;
     FilterByAuthor(*mxFilterAuthor);
-    mbResetDate = false;
 }
 
 IMPL_LINK_NOARG(CommentsPanel, ShowTimeHdl, weld::Toggleable&, void)

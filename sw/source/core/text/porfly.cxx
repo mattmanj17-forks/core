@@ -164,7 +164,8 @@ void SwTextFrame::MoveFlyInCnt(SwTextFrame *pNew,
     if ( nullptr == pObjs )
         return;
 
-    for ( size_t i = 0; GetDrawObjs() && i < pObjs->size(); ++i )
+    size_t i = 0;
+    while (GetDrawObjs() && i < pObjs->size())
     {
         // Consider changed type of <SwSortedList> entries
         SwAnchoredObject* pAnchoredObj = (*pObjs)[i];
@@ -180,14 +181,15 @@ void SwTextFrame::MoveFlyInCnt(SwTextFrame *pNew,
                     RemoveFly( pFlyFrame );
                     pNew->AppendFly( pFlyFrame );
                 }
-                else if ( dynamic_cast< const SwAnchoredDrawObject *>( pAnchoredObj ) !=  nullptr )
+                else
                 {
                     RemoveDrawObj( *pAnchoredObj );
                     pNew->AppendDrawObj( *pAnchoredObj );
                 }
-                --i;
+                continue; // pObjs shrunk
             }
         }
+        ++i;
     }
 }
 

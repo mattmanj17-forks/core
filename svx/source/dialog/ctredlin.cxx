@@ -173,7 +173,7 @@ void SvxRedlinTable::UpdateFilterTest()
     Date aDateMax( Date::SYSTEM );
     aDateMax.AddYears(100);
     Date aDateMin(1,1,1989);
-    tools::Time aTMin(0);
+    tools::Time aTMin(tools::Time::EMPTY);
     tools::Time aTMax(23,59,59);
 
     DateTime aDTMin(aDateMin);
@@ -191,11 +191,6 @@ void SvxRedlinTable::UpdateFilterTest()
                                 aDaTiFilterLast=aDTMax;
                                 break;
         case SvxRedlinDateMode::EQUAL:
-                                aDaTiFilterFirst=aDaTiFirst;
-                                aDaTiFilterLast=aDaTiFirst;
-                                aDaTiFilterFirst.SetTime(aTMin.GetTime());
-                                aDaTiFilterLast.SetTime(aTMax.GetTime());
-                                break;
         case SvxRedlinDateMode::NOTEQUAL:
                                 aDaTiFilterFirst=aDaTiFirst;
                                 aDaTiFilterLast=aDaTiFirst;
@@ -793,19 +788,11 @@ IMPL_LINK_NOARG(SvxTPFilter, SelDateHdl, weld::ComboBox&, void)
     switch(nKind)
     {
         case SvxRedlinDateMode::BEFORE:
-            EnableDateLine1(true);
-            EnableDateLine2(false);
-            break;
         case SvxRedlinDateMode::SINCE:
             EnableDateLine1(true);
             EnableDateLine2(false);
             break;
         case SvxRedlinDateMode::EQUAL:
-            EnableDateLine1(true);
-            m_xTfDate->set_sensitive(false);
-            m_xTfDate->set_text(OUString());
-            EnableDateLine2(false);
-            break;
         case SvxRedlinDateMode::NOTEQUAL:
             EnableDateLine1(true);
             m_xTfDate->set_sensitive(false);
@@ -947,7 +934,7 @@ IMPL_LINK(SvxTPFilter, ModifyDate, SvtCalendarBox&, rTF, void)
 
 IMPL_LINK(SvxTPFilter, ModifyTime, weld::FormattedSpinButton&, rTF, void)
 {
-    tools::Time aTime(0);
+    tools::Time aTime(tools::Time::EMPTY);
     if (m_xTfDate.get() == &rTF)
     {
         if (m_xTfDate->get_text().isEmpty())

@@ -788,15 +788,14 @@ static void FillBox_Impl(weld::TreeView& rBox, StyleTreeArr_Impl& rTreeArray,
 
     std::unique_ptr<weld::TreeIter> xChildParentIter = rBox.make_iterator(pParent);
     if (!pParent)
-        rBox.get_iter_first(*xChildParentIter);
+        (void)rBox.get_iter_first(*xChildParentIter);
     else
-        rBox.iter_children(*xChildParentIter);
+        (void)rBox.iter_children(*xChildParentIter);
     for (size_t i = 0; i < rTreeArray.size(); ++i)
     {
-        if (i != 0)
-            rBox.iter_next_sibling(*xChildParentIter);
         FillBox_Impl(rBox, rTreeArray[i]->getChildren(), eStyleFamily, xChildParentIter.get(),
                      blcl_insert, pViewShell, pStyleSheetPool);
+        (void)rBox.iter_next_sibling(*xChildParentIter);
     }
 }
 
